@@ -20,23 +20,27 @@ public class Dictionary {
 	private static char[] BREAK_ARRAY = {'b','r','e','a','k'};
 	private static char[] CONTINUE_ARRAY = {'c','o','n','t','i','n','u','e'};
 	private static char[] RETURN_ARRAY = {'r','e','t','u','r','n'};
-	private int state;
-	private boolean keyWordState;
+	private WordState dictState;
 	private static char prevChar;
-	enum literalState{
+	public enum WordState{
 		noChar,
 		integerState,
 		floatState,
 		exponentState,
 		keyword,
-		id
+		variable,
+		error,
+		end
 	}
-	enum wordId{
-		
+
+	public enum SearchState{
+		found,
+		whiteSpace,
+		notFound
 	}
 	
 	public Dictionary(){
-
+		dictState = WordState.noChar;
 	}
 	
 	boolean checkForKeyWord(){
@@ -44,13 +48,39 @@ public class Dictionary {
 		return false;
 	}
 	
-	boolean checkForLiteral(char c){
+	boolean checkIntLiteral(char c){
 		boolean isLiteral = false;
 		// 1 or more digits
 		if(c >= '0' && c <= '9'){
 			isLiteral = true;
+			updateStateIntFound(SearchState.found);
+		}else if(c == '.'){
+			isLiteral = true;
 		}
 		prevChar = c;
 		return isLiteral;
+	}
+
+	boolean updateStateIntFound( SearchState foundState){
+		boolean isAccepted = false;
+		//first character found is an integer, so if no error has to be start of an int/float/expo
+		if((curState() == WordState.noChar || curState() == WordState.integerState) && foundState == SearchState.found){
+			setState(WordState.integerState);
+			isAccepted = true;
+		}
+		return isAccepted;
+	}
+	
+	boolean updateStateDotFound(){
+		boolean isAccepted = false;
+		if(curState() == WordState.noChar || curState() == WordState.integerState )
+		return isAccepted;
+	}
+	
+	WordState curState(){
+		return dictState;
+	}
+	private void setState(WordState state){
+		dictState = state;
 	}
 }
