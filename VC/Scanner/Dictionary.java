@@ -56,15 +56,18 @@ public class Dictionary {
 			updateStateIntFound(SearchState.found);
 		}else if(c == '.'){
 			isLiteral = true;
+		}else{
 		}
+
 		prevChar = c;
+		
 		return isLiteral;
 	}
 
 	boolean updateStateIntFound( SearchState foundState){
 		boolean isAccepted = false;
 		//first character found is an integer, so if no error has to be start of an int/float/expo
-		if((curState() == WordState.noChar || curState() == WordState.integerState) && foundState == SearchState.found){
+		if((curState() == WordState.noChar || curState() == WordState.integerState || curState() == WordState.floatState) && foundState == SearchState.found){
 			setState(WordState.integerState);
 			isAccepted = true;
 		}
@@ -73,7 +76,10 @@ public class Dictionary {
 	
 	boolean updateStateDotFound(){
 		boolean isAccepted = false;
-		if(curState() == WordState.noChar || curState() == WordState.integerState )
+		if(curState() == WordState.noChar || curState() == WordState.integerState){
+			isAccepted = true;
+			setState(WordState.floatState);
+		}
 		return isAccepted;
 	}
 	

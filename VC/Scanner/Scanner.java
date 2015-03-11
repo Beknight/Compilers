@@ -15,11 +15,8 @@ public final class Scanner {
 	private StringBuffer currentSpelling;
 	private char currentChar;
 	private SourcePosition sourcePos;
-
-	enum StateMachine {
-
-	}
-
+	private Dictionary dict;
+	private TextCount counter;
 	// =========================================================
 
 	public Scanner(SourceFile source, ErrorReporter reporter) {
@@ -27,8 +24,8 @@ public final class Scanner {
 		errorReporter = reporter;
 		currentChar = sourceFile.getNextChar();
 		debug = false;
-
-		// you may initialise your counters for line and column numbers here
+		dict = new Dictionary();
+		counter = new TextCount();
 	}
 
 	public void enableDebugging() {
@@ -208,9 +205,19 @@ public final class Scanner {
 		}
 	}
 	private void checkForLiteral(){
-		//check for a number as the first character 
-		if(currentChar >= '0' && currentChar <= '9'){
-			System.out.println(currentChar + "is a number");
-		}
+		//throw the current char into the dictionary 
+		
+		// if true, add to spelling
+		
+		// else check dictionary for token?
+		
+		
+	}
+	
+	private int dictToToken(){
+		int foundToken = 0;
+		// convert the dictionary token to the proper token
+		return foundToken;
+		
 	}
 }
