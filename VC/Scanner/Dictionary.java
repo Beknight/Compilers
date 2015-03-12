@@ -48,6 +48,10 @@ public class Dictionary {
 		return false;
 	}
 	
+	public void resetDictionary(){
+		setState(WordState.noChar);
+	}
+	
 	boolean checkCar(char c){
 		boolean isLiteral = false;
 		// 1 or more digits
@@ -57,8 +61,9 @@ public class Dictionary {
 			isLiteral = updateStateDotFound();
 		}else if (c == ' '){
 			isLiteral = updateStateWhiteSpaceFound();
+		}else if((c >= 'a' && c <= 'z') ||(c >= 'A' && c <= 'Z')){
+			isLiteral = updateStateAlphaFound();
 		}
-
 		prevChar = c;
 		
 		return isLiteral;
@@ -93,6 +98,15 @@ public class Dictionary {
 	
 	boolean updateStateWhiteSpaceFound(){
 		boolean isAccepted = false;
+		return isAccepted;
+	}
+	
+	boolean updateStateAlphaFound(){
+		boolean isAccepted = false;
+		if(curState() == WordState.noChar || curState() == WordState.variable){
+			isAccepted = true;
+			setState(WordState.variable);
+		}
 		return isAccepted;
 	}
 	

@@ -58,7 +58,6 @@ public final class Scanner {
 
 	private int nextToken() {
 		// Tokens: separators, operators, literals, identifiers and keyworods
-
 		switch (currentChar) {
 		// separators
 		case '(':
@@ -84,6 +83,9 @@ public final class Scanner {
 		case '-':
 			accept();
 			return Token.MINUS;
+		case ';':
+			accept();
+			return Token.SEMICOLON;
 			// ....
 		case SourceFile.eof:
 			currentSpelling.append(Token.spell(Token.EOF));
@@ -205,13 +207,20 @@ public final class Scanner {
 		}
 	}
 	private void checkForLiteral(){
-		//throw the current char into the dictionary 
-		
-		// if true, add to spelling
-		
+		boolean tokenContinue = true;
+		while(tokenContinue){
+			//throw the current char into the dictionary 
+			tokenContinue = dict.checkCar(currentChar);
+			// if true, add to spelling
+			if(tokenContinue){
+				accept();	
+				currentSpelling.append(currentChar);
+			}
+				
+		}
+		System.out.println(currentSpelling);
 		// else check dictionary for token?
-		
-		
+		dict.resetDictionary();
 	}
 	
 	private int dictToToken(){
