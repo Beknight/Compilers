@@ -48,15 +48,15 @@ public class Dictionary {
 		return false;
 	}
 	
-	boolean checkIntLiteral(char c){
+	boolean checkCar(char c){
 		boolean isLiteral = false;
 		// 1 or more digits
 		if(c >= '0' && c <= '9'){
-			isLiteral = true;
-			updateStateIntFound(SearchState.found);
+			isLiteral = updateStateIntFound();
 		}else if(c == '.'){
-			isLiteral = true;
-		}else{
+			isLiteral = updateStateDotFound();
+		}else if (c == ' '){
+			isLiteral = updateStateWhiteSpaceFound();
 		}
 
 		prevChar = c;
@@ -64,12 +64,17 @@ public class Dictionary {
 		return isLiteral;
 	}
 
-	boolean updateStateIntFound( SearchState foundState){
+	boolean updateStateIntFound( ){
 		boolean isAccepted = false;
 		//first character found is an integer, so if no error has to be start of an int/float/expo
-		if((curState() == WordState.noChar || curState() == WordState.integerState || curState() == WordState.floatState) && foundState == SearchState.found){
+		if((curState() == WordState.noChar || curState() == WordState.integerState || curState() == WordState.floatState)){
 			setState(WordState.integerState);
 			isAccepted = true;
+		}else if(curState() == WordState.variable){
+			setState(WordState.variable);
+		}else{
+			isAccepted = false;
+			setState(WordState.error);
 		}
 		return isAccepted;
 	}
@@ -79,7 +84,15 @@ public class Dictionary {
 		if(curState() == WordState.noChar || curState() == WordState.integerState){
 			isAccepted = true;
 			setState(WordState.floatState);
+		}else{
+			isAccepted = false;
+			setState(WordState.error);
 		}
+		return isAccepted;
+	}
+	
+	boolean updateStateWhiteSpaceFound(){
+		boolean isAccepted = false;
 		return isAccepted;
 	}
 	
