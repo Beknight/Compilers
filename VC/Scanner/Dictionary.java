@@ -116,4 +116,17 @@ public class Dictionary {
 	private void setState(WordState state){
 		dictState = state;
 	}
+	
+	public int convertToToken(){
+		int curToken = 0;
+		if(curState() == WordState.integerState){
+			curToken = Token.INTLITERAL;
+		}else if(curState() == WordState.floatState){
+			curToken = Token.FLOATLITERAL;
+		}else if(curState() == WordState.variable){
+			curToken = Token.ID;
+		}
+		
+		return curToken;
+	}
 }

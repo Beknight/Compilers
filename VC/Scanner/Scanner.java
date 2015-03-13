@@ -86,16 +86,23 @@ public final class Scanner {
 		case ';':
 			accept();
 			return Token.SEMICOLON;
-			// ....
 		case SourceFile.eof:
 			currentSpelling.append(Token.spell(Token.EOF));
 			return Token.EOF;
+		case ',':
+			accept();
+			return Token.COMMA;
+		case '/':
+			accept();
+			return Token.DIV;
+		case '=':
+			accept();
+			return Token.EQ;
 		default:
-			checkForLiteral();
-			break;
+			int token = checkForLiteral();
+//			accept();
+			return token;
 		}
-		accept();
-		return Token.ERROR;
 	}
 
 	void skipSpaceAndComments() {
@@ -124,7 +131,6 @@ public final class Scanner {
 		int kind;
 
 		// skip white space and comments
-
 		skipSpaceAndComments();
 
 		currentSpelling = new StringBuffer("");
@@ -173,7 +179,7 @@ public final class Scanner {
 
 	private boolean ignoreWhiteSpaces() {
 		boolean whiteSpaces = false;
-		while (currentChar == ' ') {
+		while (currentChar == ' ' || currentChar == '\n') {
 			// check the current char is white
 			accept();
 			whiteSpaces = true;
@@ -206,26 +212,29 @@ public final class Scanner {
 			count++;
 		}
 	}
-	private void checkForLiteral(){
+	private int checkForLiteral(){
 		boolean tokenContinue = true;
+		int token = -1;
 		while(tokenContinue){
 			//throw the current char into the dictionary 
 			tokenContinue = dict.checkCar(currentChar);
 			// if true, add to spelling
 			if(tokenContinue){
-				accept();	
 				currentSpelling.append(currentChar);
+				accept();	
 			}
 				
 		}
-		System.out.println(currentSpelling);
+		token = dictToToken();
 		// else check dictionary for token?
 		dict.resetDictionary();
+		return token;
 	}
 	
 	private int dictToToken(){
 		int foundToken = 0;
-		// convert the dictionary token to the proper token
+		foundToken = dict.convertToToken();
+		// get the token from the dictionary
 		return foundToken;
 		
 	}
