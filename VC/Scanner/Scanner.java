@@ -61,41 +61,47 @@ public final class Scanner {
 		switch (currentChar) {
 		// separators
 		case '(':
+			addCharToString();
 			accept();
 			return Token.LPAREN;
-		case '.':
-			// attempting to recognise a float
-
 		case '|':
 			accept();
 			if (currentChar == '|') {
+				addCharToString();
 				accept();
 				return Token.OROR;
 			} else {
 				return Token.ERROR;
 			}
 		case ')':
+			addCharToString();
 			accept();
 			return Token.RPAREN;
 		case '+':
+			addCharToString();
 			accept();
 			return Token.PLUS;
 		case '-':
+			addCharToString();
 			accept();
 			return Token.MINUS;
 		case ';':
+			addCharToString();
 			accept();
 			return Token.SEMICOLON;
 		case SourceFile.eof:
 			currentSpelling.append(Token.spell(Token.EOF));
 			return Token.EOF;
 		case ',':
+			addCharToString();
 			accept();
 			return Token.COMMA;
 		case '/':
+			addCharToString();
 			accept();
 			return Token.DIV;
 		case '=':
+			addCharToString();
 			accept();
 			return Token.EQ;
 		default:
@@ -105,6 +111,10 @@ public final class Scanner {
 		}
 	}
 
+	private void addCharToString(){
+		currentSpelling.append(currentChar);
+	}
+	
 	void skipSpaceAndComments() {
 		// needs to find the start of the next token
 		boolean skippableFound = true;
@@ -118,6 +128,14 @@ public final class Scanner {
 			case '/':
 				// inspect the next char
 				skippableFound = checkForCommentChars();
+				break;
+			case '\n':
+				skippableFound = true;
+				accept();
+				break;
+			case '\r':
+				skippableFound = true;
+				accept();
 				break;
 			default:
 				skippableFound = false;
@@ -179,7 +197,7 @@ public final class Scanner {
 
 	private boolean ignoreWhiteSpaces() {
 		boolean whiteSpaces = false;
-		while (currentChar == ' ' || currentChar == '\n') {
+		while (currentChar == ' ') {
 			// check the current char is white
 			accept();
 			whiteSpaces = true;
@@ -225,6 +243,7 @@ public final class Scanner {
 			}
 				
 		}
+		
 		token = dictToToken();
 		// else check dictionary for token?
 		dict.resetDictionary();

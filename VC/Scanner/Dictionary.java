@@ -1,5 +1,8 @@
 package Scanner;
 
+import java.util.LinkedList;
+import java.util.List;
+
 /**
  * 
  * @author benjamin
@@ -22,6 +25,7 @@ public class Dictionary {
 	private static char[] RETURN_ARRAY = {'r','e','t','u','r','n'};
 	private WordState dictState;
 	private static char prevChar;
+	private LinkedList<char[]> keyWordList;
 	public enum WordState{
 		noChar,
 		integerState,
@@ -37,6 +41,12 @@ public class Dictionary {
 		found,
 		whiteSpace,
 		notFound
+	}
+	
+	public enum KeyWordSearch{
+		started,
+		found,
+		none
 	}
 	
 	public Dictionary(){
@@ -68,7 +78,9 @@ public class Dictionary {
 		
 		return isLiteral;
 	}
-
+	
+	
+	
 	boolean updateStateIntFound( ){
 		boolean isAccepted = false;
 		//first character found is an integer, so if no error has to be start of an int/float/expo
@@ -128,5 +140,9 @@ public class Dictionary {
 		}
 		
 		return curToken;
+	}
+
+	private void addWordsToList(){
+		keyWordList.add(INT_ARRAY);
 	}
 }
