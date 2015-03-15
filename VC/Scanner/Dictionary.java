@@ -1,5 +1,6 @@
 package Scanner;
 
+import java.awt.geom.Point2D;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -24,7 +25,9 @@ public class Dictionary {
 	private static char[] CONTINUE_ARRAY = {'c','o','n','t','i','n','u','e'};
 	private static char[] RETURN_ARRAY = {'r','e','t','u','r','n'};
 	private WordState dictState;
+	private KeyWordSearch keyWordState;
 	private static char prevChar;
+	private LinkedList<Point2D> rowCol;
 	private LinkedList<char[]> keyWordList;
 	public enum WordState{
 		noChar,
@@ -44,22 +47,56 @@ public class Dictionary {
 	}
 	
 	public enum KeyWordSearch{
+		set,
 		started,
 		found,
 		none
 	}
 	
 	public Dictionary(){
-		dictState = WordState.noChar;
+		rowCol = new LinkedList<Point2D>();
+		keyWordList = new LinkedList<char[]>();
+		
+		resetDictionary();
+		addWordsToList();
 	}
 	
-	boolean checkForKeyWord(){
-		
+	boolean checkForKeyWord(char c){
+		//
+		if(keyWordState == KeyWordSearch.set){
+			// search through all of the lists for the first char
+			for(int i = 0; i < keyWordList.size(); i++){
+				// for every first letter word, we add a new row col
+				char curChar = keyWordList.get(i)[0];
+				if(curChar == c){
+					// add the row and col into the next letter
+					rowCol.add(new Point2D.Float(i,0));
+					System.out.println("key letter found" + " " + new String(keyWordList.get(i)));
+					keyWordState = KeyWordSearch.started;
+				}
+			}
+		}else if(keyWordState == KeyWordSearch.started){
+			// for all the row cols, check the next letter
+			for(int i = 0; i < rowCol.size(); i++){
+				int wordIndex = (int)rowCol.get(i).getX();
+				System.out.println("word index: " + wordIndex);
+				int letterIndex = (int)rowCol.get(i).getY();
+				char[] curWord = keyWordList.get(wordIndex);
+				if(letterIndex + 1 < curWord.length &&c == curWord[letterIndex + 1]){
+					System.out.println("key letter found: " + letterIndex + " " + new String(keyWordList.get(wordIndex)));
+					rowCol.get(i).setLocation(wordIndex, letterIndex + 1);
+				}else{
+					rowCol.remove(i);
+				}
+			}
+		}
 		return false;
 	}
 	
 	public void resetDictionary(){
 		setState(WordState.noChar);
+		keyWordState = KeyWordSearch.set;
+		rowCol.clear();
 	}
 	
 	boolean checkCar(char c){
@@ -74,12 +111,11 @@ public class Dictionary {
 		}else if((c >= 'a' && c <= 'z') ||(c >= 'A' && c <= 'Z')){
 			isLiteral = updateStateAlphaFound();
 		}
+		checkForKeyWord(c);
 		prevChar = c;
 		
 		return isLiteral;
 	}
-	
-	
 	
 	boolean updateStateIntFound( ){
 		boolean isAccepted = false;
@@ -144,5 +180,15 @@ public class Dictionary {
 
 	private void addWordsToList(){
 		keyWordList.add(INT_ARRAY);
+		keyWordList.add(BOOLEAN_ARRAY);
+		keyWordList.add(FLOAT_ARRAY);
+		keyWordList.add(VOID_ARRAY);
+		keyWordList.add(IF_ARRAY);
+		keyWordList.add(ELSE_ARRAY);
+		keyWordList.add(FOR_ARRAY);
+		keyWordList.add(WHILE_ARRAY);
+		keyWordList.add(BREAK_ARRAY);
+		keyWordList.add(CONTINUE_ARRAY);
+		keyWordList.add(RETURN_ARRAY);
 	}
 }
