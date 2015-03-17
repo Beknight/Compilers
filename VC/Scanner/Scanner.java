@@ -35,7 +35,12 @@ public final class Scanner {
 	// accept gets the next character from the source program.
 
 	private void accept() {
-
+		if(currentChar == '\r' || currentChar == '\n'){
+			counter.incrementLineCounter();
+			counter.resetColumn();
+		}else{
+			counter.incrementColumnCounter();
+		}
 		currentChar = sourceFile.getNextChar();
 
 		// you may save the lexeme of the current token incrementally here
@@ -77,6 +82,10 @@ public final class Scanner {
 			addCharToString();
 			accept();
 			return Token.RPAREN;
+		case '*':
+			addCharToString();
+			accept();
+			return Token.MULT;
 		case '+':
 			addCharToString();
 			accept();
@@ -91,6 +100,8 @@ public final class Scanner {
 			return Token.SEMICOLON;
 		case SourceFile.eof:
 			currentSpelling.append(Token.spell(Token.EOF));
+			accept();
+//			counter.incrementColumnCounter();
 			return Token.EOF;
 		case ',':
 			addCharToString();
@@ -162,11 +173,14 @@ public final class Scanner {
 		currentSpelling = new StringBuffer("");
 
 		sourcePos = new SourcePosition();
-
+		sourcePos.lineStart = counter.getLineCount();
+		sourcePos.charStart = counter.getColumnCount();
 		// You must record the position of the current token somehow
 
 		kind = nextToken();
 
+		sourcePos.lineFinish = counter.getLineCount();
+		sourcePos.charFinish = counter.getColumnCount() - 1;
 		tok = new Token(kind, currentSpelling.toString(), sourcePos);
 
 		// * do not remove these three lines
@@ -217,7 +231,7 @@ public final class Scanner {
 			nextChar = sourceFile.inspectChar(1);
 			if (currentChar == '*' && nextChar == '/') {
 				endCommentFound = true;
-				accept();
+				acceptMultiple(2);
 			}
 		}else{
 			if(currentChar == '\n' || currentChar == '\r'){
@@ -256,6 +270,11 @@ public final class Scanner {
 	private int dictToToken(){
 		int foundToken = 0;
 		foundToken = dict.convertToToken();
+		if(foundToken == Token.FLOATLITERAL){
+			if(!dict.checkFloat(currentSpelling.toString())){
+				foundToken = Token.ERROR;
+			}
+		}
 		// get the token from the dictionary
 		return foundToken;
 		

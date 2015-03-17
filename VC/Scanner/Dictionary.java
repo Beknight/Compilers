@@ -103,18 +103,42 @@ public class Dictionary {
 			isLiteral = updateStateDotFound();
 		} else if (c == ' ') {
 			isLiteral = updateStateWhiteSpaceFound();
-		} else if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')) {
-			isLiteral = updateStateAlphaFound();
-		} else if(c == '_'){
-			
+		} else if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c == '_')) {
+			if((c == 'E' || c == 'e' )){
+				isLiteral = updateEFound();
+			}if(!isLiteral){
+				isLiteral = updateStateAlphaFound();
+			}
+		} else if(c == '+' || c == '-'){
+			isLiteral = updateSignFound();
 		}
 		if(isLiteral){
 			checkForKeyWord(c);
+		}else {
+			// do an error check here
 		}
 			keyWordState = KeyWordSearch.started;
 		prevChar = c;
 
 		return isLiteral;
+	}
+	
+	boolean updateSignFound(){
+		boolean isAccepted = false;
+		if(curState() == WordState.exponentState){
+			isAccepted = true;
+		}
+		return isAccepted;
+	}
+	
+	boolean updateEFound(){
+		boolean isAccepted = false;
+		// this is 
+		if (curState() == WordState.floatState){
+			isAccepted = true;
+			setState(WordState.exponentState);
+		}
+		return isAccepted;
 	}
 
 	boolean updateStateIntFound() {
@@ -122,12 +146,18 @@ public class Dictionary {
 		// first character found is an integer, so if no error has to be start
 		// of an int/float/expo
 		if ((curState() == WordState.noChar
-				|| curState() == WordState.integerState || curState() == WordState.floatState)) {
-			setState(WordState.integerState);
+				|| curState() == WordState.integerState || curState() == WordState.floatState || curState() == WordState.exponentState)) {
+			if(curState() == WordState.noChar){
+				setState(WordState.integerState);
+			}else{
+				setState(curState());
+			}
 			isAccepted = true;
 		} else if (curState() == WordState.variable) {
 			setState(WordState.variable);
+			isAccepted = true;
 		} else {
+			System.out.println("error");
 			isAccepted = false;
 			setState(WordState.error);
 		}
@@ -157,6 +187,9 @@ public class Dictionary {
 		if (curState() == WordState.noChar || curState() == WordState.variable) {
 			isAccepted = true;
 			setState(WordState.variable);
+		}else{
+			isAccepted = false;
+			setState(WordState.error);
 		}
 		return isAccepted;
 	}
@@ -173,13 +206,15 @@ public class Dictionary {
 		int curToken = 0;
 		if (curState() == WordState.integerState) {
 			curToken = Token.INTLITERAL;
-		} else if (curState() == WordState.floatState) {
+		} else if (curState() == WordState.floatState || curState() == WordState.exponentState) {
 			curToken = Token.FLOATLITERAL;
 		} else if (curState() == WordState.variable) {
 			curToken = Token.ID;
 			if(matchList.size() == 1){
-				curToken = Token.BOOLEAN;
+				curToken = Token.BOOLEANLITERAL;
 			}
+		}else if(curState() == WordState.error){
+			curToken = Token.ERROR;
 		}
 	
 		return curToken;
@@ -188,16 +223,30 @@ public class Dictionary {
 	private void addWordsToList() {
 		keyWordList.add(TRUE_ARRAY);
 		keyWordList.add(FALSE_ARRAY);
-//		keyWordList.add(INT_ARRAY);
-//		keyWordList.add(BOOLEAN_ARRAY);
-//		keyWordList.add(FLOAT_ARRAY);
-//		keyWordList.add(VOID_ARRAY);
-//		keyWordList.add(IF_ARRAY);
-//		keyWordList.add(ELSE_ARRAY);
-//		keyWordList.add(FOR_ARRAY);
-//		keyWordList.add(WHILE_ARRAY);
-//		keyWordList.add(BREAK_ARRAY);
-//		keyWordList.add(CONTINUE_ARRAY);
-//		keyWordList.add(RETURN_ARRAY);
+	}
+	
+	boolean checkFloat(String floatString){
+		char[] floatLiteral = floatString.toCharArray();
+		boolean isGood = false;
+		int eCount = 0;
+		int opCount = 0;
+		for(int i = 0; i < floatLiteral.length; i++){
+			char curC = floatLiteral[i];
+			if(curC == 'e' || curC == 'E'){
+				eCount++;
+			}else if(curC == '+' || curC == '-'){
+				opCount++;
+			}
+		}
+		if(eCount <= 1 && opCount <=1){
+			isGood = true;
+		}else {
+			isGood = false;
+		}
+		if(floatLiteral[floatLiteral.length - 1] == 'e'){
+			isGood = false;
+		}
+		
+		return isGood;
 	}
 }
