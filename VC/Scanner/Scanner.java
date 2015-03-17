@@ -4,6 +4,9 @@
 
 package Scanner;
 
+import java.util.LinkedList;
+
+import Scanner.Dictionary.KeyWordSearch;
 import VC.ErrorReporter;
 
 public final class Scanner {
@@ -15,8 +18,11 @@ public final class Scanner {
 	private StringBuffer currentSpelling;
 	private char currentChar;
 	private SourcePosition sourcePos;
-	private Dictionary dict;
 	private TextCount counter;
+	
+	public enum WordState {
+		noChar, integerState, floatState, exponentState, keyword, variable, error, end
+	}
 	// =========================================================
 
 	public Scanner(SourceFile source, ErrorReporter reporter) {
@@ -24,7 +30,6 @@ public final class Scanner {
 		errorReporter = reporter;
 		currentChar = sourceFile.getNextChar();
 		debug = false;
-		dict = new Dictionary();
 		counter = new TextCount();
 	}
 
@@ -114,14 +119,23 @@ public final class Scanner {
 		case '<':
 			addCharToString();
 			accept();
+			if(currentChar == '='){
+				return Token.LTEQ;
+			}
 			return Token.LT;
 		case '>' :
 			addCharToString();
 			accept();
+			if(currentChar == '='){
+				return Token.GTEQ;
+			}
 			return Token.GT;
 		case '=':
 			addCharToString();
 			accept();
+			if(currentChar == '='){
+				return Token.EQEQ;	
+			}
 			return Token.EQ;
 		default:
 			int token = checkForLiteral();
@@ -249,34 +263,77 @@ public final class Scanner {
 		}
 	}
 	private int checkForLiteral(){
-		boolean tokenContinue = true;
-		int token = -1;
-		while(tokenContinue){
-			//throw the current char into the dictionary 
-			tokenContinue = dict.checkCar(currentChar);
-			// if true, add to spelling
-			if(tokenContinue){
-				currentSpelling.append(currentChar);
-				accept();	
-			}
+		int token = 0;
+		WordState curWordState = WordState.noChar;
+		LinkedList<WordState> stateList = new LinkedList<WordState>();
+		int charDelta = 0;
+		char c = ' ';
+		while(curWordState != WordState.error){
+			// from cur char onwards
+			c = charDelta > 0 ?  sourceFile.inspectChar(charDelta) : currentChar;
+			
+			charDelta++;
 		}
-		
-		token = dictToToken();
-		// else check dictionary for token?
-		dict.resetDictionary();
+		//after error we  know that the last character was wrong . accept up to that point and return. 
 		return token;
 	}
-	
-	private int dictToToken(){
-		int foundToken = 0;
-		foundToken = dict.convertToToken();
-		if(foundToken == Token.FLOATLITERAL){
-			if(!dict.checkFloat(currentSpelling.toString())){
-				foundToken = Token.ERROR;
+	boolean checkId(char[] array){
+		boolean isId = true;
+		// _|[A-Z]|[a-z]([a-zA-Z0--9_])*
+		if(array[0] >= '0' && array[0] <= '9'){
+			isId = false;
+		}else{
+			char c = ' ';
+			//check the rest of the string only consists of letters numbers and underscores
+			for(int i = 0; i < array.length; i++){
+				c = array[i];
+				if(!checkIsAlpha(c) || !checkIsDig(c) || c != '_'){
+					isId = false;
+				}
 			}
 		}
-		// get the token from the dictionary
-		return foundToken;
+		return isId;
+	}
+	boolean checkFloat(char[] floatLiteral){
+		boolean isGood = false;
+		int eCount = 0;
+		int opCount = 0;
+		for(int i = 0; i < floatLiteral.length; i++){
+			char curC = floatLiteral[i];
+			if(curC == 'e' || curC == 'E'){
+				eCount++;
+			}else if(curC == '+' || curC == '-'){
+				opCount++;
+			}
+		}
+		if(eCount <= 1 && opCount <=1){
+			isGood = true;
+		}else {
+			isGood = false;
+		}
+		if(floatLiteral[floatLiteral.length - 1] == 'e'){
+			isGood = false;
+		}
 		
+		return isGood;
+	}
+	
+//	boolean checkBool(char[] array){
+//		
+//	}
+
+	boolean checkIsAlpha(char c){
+		boolean isAlpha = false;
+		if((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')){
+			isAlpha = true;
+		}
+		return isAlpha;
+	}
+	boolean checkIsDig(char c){
+		boolean isDig = false;
+		if( c >= '0' && c <= '9'){
+			isDig = true;
+		}
+		return isDig;
 	}
 }
