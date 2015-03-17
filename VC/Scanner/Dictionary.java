@@ -13,18 +13,8 @@ import java.util.List;
 
 public class Dictionary {
 
-	private static char[] INT_ARRAY = { 'i', 'n', 't' };
-	private static char[] BOOLEAN_ARRAY = { 'b', 'o', 'o', 'l', 'e', 'a', 'n' };
-	private static char[] FLOAT_ARRAY = { 'f', 'l', 'o', 'a', 't' };
-	private static char[] VOID_ARRAY = { 'v', 'o', 'i', 'd' };
-	private static char[] IF_ARRAY = { 'i', 'f' };
-	private static char[] ELSE_ARRAY = { 'e', 'l', 's', 'e' };
-	private static char[] FOR_ARRAY = { 'f', 'o', 'r' };
-	private static char[] WHILE_ARRAY = { 'w', 'h', 'i', 'l', 'e' };
-	private static char[] BREAK_ARRAY = { 'b', 'r', 'e', 'a', 'k' };
-	private static char[] CONTINUE_ARRAY = { 'c', 'o', 'n', 't', 'i', 'n', 'u',
-			'e' };
-	private static char[] RETURN_ARRAY = { 'r', 'e', 't', 'u', 'r', 'n' };
+	private static char[] TRUE_ARRAY  = {'t','r','u','e'};
+	private static char[] FALSE_ARRAY = {'f','a','l','s','e'};
 	private WordState dictState;
 	private KeyWordSearch keyWordState;
 	private static char prevChar;
@@ -64,8 +54,6 @@ public class Dictionary {
 				if (curChar == c) {
 					// add the row and col into the next letter
 					rowCol.add(new Point2D.Float(i, 0));
-					System.out.println("key letter found" + " "
-							+ new String(keyWordList.get(i)));
 					keyWordState = KeyWordSearch.started;
 				}
 			}
@@ -73,23 +61,25 @@ public class Dictionary {
 			// for all the row cols, check the next letter
 			for (int i = 0; i < rowCol.size(); i++) {
 				int wordIndex = (int) rowCol.get(i).getX();
-				System.out.println("word index: " + wordIndex);
 				int letterIndex = (int) rowCol.get(i).getY();
 				char[] curWord = keyWordList.get(wordIndex);
+		
 				if (letterIndex + 1 < curWord.length
 						&& c == curWord[letterIndex + 1]) {
-					System.out.println("key letter found: " + letterIndex + " "
-							+ new String(keyWordList.get(wordIndex)));
+//					System.out.println("key letter found: " + letterIndex + " "
+//							+ new String(keyWordList.get(wordIndex)));
 					rowCol.get(i).setLocation(wordIndex, letterIndex + 1);
 					// if match found, add to matchList
-					if ((letterIndex + 1) == curWord.length) {
+					if ((letterIndex + 1) == (curWord.length - 1)) {
 						matchList.add(wordIndex);
+						keyWordState = KeyWordSearch.found;
 					}
 				} else {
 					rowCol.remove(i);
 					// check if in match list, if so remove it.
 					if (matchList.contains(wordIndex)) {
 						matchList.remove(i);
+						keyWordState = KeyWordSearch.started;
 					}
 				}
 			}
@@ -101,6 +91,7 @@ public class Dictionary {
 		setState(WordState.noChar);
 		keyWordState = KeyWordSearch.set;
 		rowCol.clear();
+		matchList.clear();
 	}
 
 	boolean checkCar(char c) {
@@ -114,8 +105,13 @@ public class Dictionary {
 			isLiteral = updateStateWhiteSpaceFound();
 		} else if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')) {
 			isLiteral = updateStateAlphaFound();
+		} else if(c == '_'){
+			
 		}
-		checkForKeyWord(c);
+		if(isLiteral){
+			checkForKeyWord(c);
+		}
+			keyWordState = KeyWordSearch.started;
 		prevChar = c;
 
 		return isLiteral;
@@ -181,22 +177,27 @@ public class Dictionary {
 			curToken = Token.FLOATLITERAL;
 		} else if (curState() == WordState.variable) {
 			curToken = Token.ID;
+			if(matchList.size() == 1){
+				curToken = Token.BOOLEAN;
+			}
 		}
-
+	
 		return curToken;
 	}
 
 	private void addWordsToList() {
-		keyWordList.add(INT_ARRAY);
-		keyWordList.add(BOOLEAN_ARRAY);
-		keyWordList.add(FLOAT_ARRAY);
-		keyWordList.add(VOID_ARRAY);
-		keyWordList.add(IF_ARRAY);
-		keyWordList.add(ELSE_ARRAY);
-		keyWordList.add(FOR_ARRAY);
-		keyWordList.add(WHILE_ARRAY);
-		keyWordList.add(BREAK_ARRAY);
-		keyWordList.add(CONTINUE_ARRAY);
-		keyWordList.add(RETURN_ARRAY);
+		keyWordList.add(TRUE_ARRAY);
+		keyWordList.add(FALSE_ARRAY);
+//		keyWordList.add(INT_ARRAY);
+//		keyWordList.add(BOOLEAN_ARRAY);
+//		keyWordList.add(FLOAT_ARRAY);
+//		keyWordList.add(VOID_ARRAY);
+//		keyWordList.add(IF_ARRAY);
+//		keyWordList.add(ELSE_ARRAY);
+//		keyWordList.add(FOR_ARRAY);
+//		keyWordList.add(WHILE_ARRAY);
+//		keyWordList.add(BREAK_ARRAY);
+//		keyWordList.add(CONTINUE_ARRAY);
+//		keyWordList.add(RETURN_ARRAY);
 	}
 }

@@ -100,6 +100,14 @@ public final class Scanner {
 			addCharToString();
 			accept();
 			return Token.DIV;
+		case '<':
+			addCharToString();
+			accept();
+			return Token.LT;
+		case '>' :
+			addCharToString();
+			accept();
+			return Token.GT;
 		case '=':
 			addCharToString();
 			accept();
@@ -181,16 +189,13 @@ public final class Scanner {
 		}
 		if(commentFound){
 			acceptMultiple(2);
-			System.out.print("ES ||");
 		}
 		if (commentFound) {
 			// skip eveyrthing until either EOF or * then /
 			while(currentChar != sourceFile.eof && !checkForCommentEnd(isStar)){
 				// check to make sure that it is not end of comment
-				System.out.print(currentChar);
 				accept();
 			}
-			System.out.println(" || EOC FOUND");
 		}
 		return commentFound;
 	}
@@ -201,7 +206,6 @@ public final class Scanner {
 			// check the current char is white
 			accept();
 			whiteSpaces = true;
-			System.out.println("white space accepted");
 		}
 		return whiteSpaces;
 	}
@@ -241,7 +245,6 @@ public final class Scanner {
 				currentSpelling.append(currentChar);
 				accept();	
 			}
-				
 		}
 		
 		token = dictToToken();
