@@ -4,24 +4,27 @@
 
 package Scanner;
 
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.Map;
 
-import Scanner.Dictionary.KeyWordSearch;
 import VC.ErrorReporter;
 
 public final class Scanner {
 
 	private SourceFile sourceFile;
 	private boolean debug;
-
+	private static char[] TRUE_ARRAY  = {'t','r','u','e'};
+	private static char[] FALSE_ARRAY = {'f','a','l','s','e'};
 	private ErrorReporter errorReporter;
 	private StringBuffer currentSpelling;
 	private char currentChar;
 	private SourcePosition sourcePos;
 	private TextCount counter;
-	
+	private Map<WordState, Integer> stateMap =  new HashMap<WordState, Integer>();
 	public enum WordState {
-		noChar, integerState, floatState, exponentState, keyword, variable, error, end
+		noChar, integerState, floatState, exponentState, keyword, variable, error, dotState, eState , end, opState
 	}
 	// =========================================================
 
@@ -137,6 +140,10 @@ public final class Scanner {
 				return Token.EQEQ;	
 			}
 			return Token.EQ;
+		case '.':
+			addCharToString();
+			accept();
+			return Token.ERROR;
 		default:
 			int token = checkForLiteral();
 //			accept();
@@ -267,14 +274,94 @@ public final class Scanner {
 		WordState curWordState = WordState.noChar;
 		LinkedList<WordState> stateList = new LinkedList<WordState>();
 		int charDelta = 0;
+		StringBuffer strBuff = new StringBuffer();
 		char c = ' ';
 		while(curWordState != WordState.error){
 			// from cur char onwards
 			c = charDelta > 0 ?  sourceFile.inspectChar(charDelta) : currentChar;
-			
+			if(checkIsAlpha(c)){
+				if(curWordState == WordState.noChar || curWordState == WordState.variable){
+					// letters can only be part of word
+					curWordState = WordState.variable;
+				}else if((c == 'e' || c == 'E') && curWordState == WordState.floatState){
+					curWordState = WordState.eState;
+				}else {
+					curWordState = WordState.error;
+				}
+			}else if(checkIsDig(c)){
+				if(curWordState == WordState.noChar){
+					// if no char then it is the start of a number 
+					curWordState = WordState.integerState;
+				}else if(curWordState == WordState.dotState || curWordState == WordState.floatState || curWordState == WordState.eState || curWordState == WordState.opState){
+					curWordState = WordState.floatState;
+				}else if(curWordState == WordState.variable){
+					curWordState = WordState.variable;
+				}else{
+					curWordState = WordState.error;
+				}
+				
+			}else if(c == '.'){
+				if(curWordState == WordState.integerState){
+					curWordState = WordState.dotState;
+				}else { 
+					curWordState = WordState.error;
+				}
+			}else if(c == '+' || c == '-'){
+				if(curWordState == WordState.eState){
+					curWordState = WordState.opState;
+				}else{
+					curWordState = WordState.error;
+				}
+			}else{
+				curWordState = WordState.error;
+			}
+			strBuff.append(c);
 			charDelta++;
+			stateList.addFirst(curWordState);
 		}
+		boolean goodToken = false;
+		//convert the strBuff to char arry
 		//after error we  know that the last character was wrong . accept up to that point and return. 
+		strBuff.deleteCharAt(strBuff.length() - 1);
+		stateList.pop();
+		assert(strBuff.length() < 0);
+		
+		while(!goodToken && strBuff.length() > 0){
+		// while there is not an accepted token || char is not empy
+			WordState listState = stateList.getFirst();
+			// check the char[] against what token is on the statelist
+			//convert the string into a char arary
+			char[] array = strBuff.toString().toCharArray();
+			if(listState == WordState.variable){
+				//check if its true or false
+				if(array.length == 4 || array.length == 5){
+					goodToken = checkBoolLiteral(array);
+					token = Token.BOOLEANLITERAL;
+				}
+				if (!goodToken){
+//				 else check if its id
+					goodToken = checkId(array);
+					token = Token.ID;
+				}
+				
+			}else if(listState == WordState.floatState ){
+				goodToken = checkFloat(array);
+				token = Token.FLOATLITERAL;
+				
+			} else if(listState == WordState.integerState) {
+				goodToken = checkIsInt(array);
+				token = Token.INTLITERAL;
+			}
+			// still need to check for true false
+			if(!goodToken){
+				strBuff.deleteCharAt(strBuff.length() - 1);
+				stateList.pop();
+			}
+		// accept char[].length e and add char.length to string buffer 
+		}
+		// we need to accept and append strBuffer length chars
+		appendToStrBuffer(strBuff.length());
+		
 		return token;
 	}
 	boolean checkId(char[] array){
@@ -287,7 +374,7 @@ public final class Scanner {
 			//check the rest of the string only consists of letters numbers and underscores
 			for(int i = 0; i < array.length; i++){
 				c = array[i];
-				if(!checkIsAlpha(c) || !checkIsDig(c) || c != '_'){
+				if(!checkIsAlpha(c) && !checkIsDig(c) && c != '_'){
 					isId = false;
 				}
 			}
@@ -298,6 +385,7 @@ public final class Scanner {
 		boolean isGood = false;
 		int eCount = 0;
 		int opCount = 0;
+		char lastLetter = floatLiteral[floatLiteral.length-1];
 		for(int i = 0; i < floatLiteral.length; i++){
 			char curC = floatLiteral[i];
 			if(curC == 'e' || curC == 'E'){
@@ -309,19 +397,38 @@ public final class Scanner {
 		if(eCount <= 1 && opCount <=1){
 			isGood = true;
 		}else {
+			System.out.println("eCOunt and opCount");
 			isGood = false;
 		}
-		if(floatLiteral[floatLiteral.length - 1] == 'e'){
+		
+		if(lastLetter == 'e' || lastLetter == 'E' || lastLetter == '+' || lastLetter == '-'){
+			System.out.println("lastLetter");
 			isGood = false;
 		}
 		
 		return isGood;
 	}
-	
-//	boolean checkBool(char[] array){
-//		
-//	}
 
+	boolean checkIsInt(char[] array){
+		boolean isInt = true;
+		for(int i = 0; i < array.length; i++){
+			if(!(array[i] >= '0' && array[i] <= '9')){
+				isInt = false;
+			}
+		}
+		return isInt;
+	}
+	
+	boolean checkBoolLiteral(char[] array){
+		boolean isBoolLiteral = false;
+		//check if spelling is true  or false
+		if(Arrays.equals(array,TRUE_ARRAY) || Arrays.equals(array, FALSE_ARRAY)){
+			isBoolLiteral = true;
+		}
+		
+		return isBoolLiteral;
+	}
+	
 	boolean checkIsAlpha(char c){
 		boolean isAlpha = false;
 		if((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')){
@@ -329,11 +436,18 @@ public final class Scanner {
 		}
 		return isAlpha;
 	}
+	
 	boolean checkIsDig(char c){
 		boolean isDig = false;
 		if( c >= '0' && c <= '9'){
 			isDig = true;
 		}
 		return isDig;
+	}
+	void appendToStrBuffer(int x){
+		for(int i = 0; i < x; i++){
+			addCharToString();
+			accept();
+		}
 	}
 }
