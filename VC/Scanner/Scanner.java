@@ -22,6 +22,8 @@ public final class Scanner {
 	private char currentChar;
 	private SourcePosition sourcePos;
 	private TextCount counter;
+	private int lineCount;
+	private int columnCount;
 	private Map<WordState, Integer> stateMap =  new HashMap<WordState, Integer>();
 	public enum WordState {
 		noChar, integerState, floatState, exponentState, keyword, variable, error, dotState, eState , end, opState
@@ -231,7 +233,7 @@ public final class Scanner {
 		}
 		if (commentFound) {
 			// skip eveyrthing until either EOF or * then /
-			while(currentChar != sourceFile.eof && !checkForCommentEnd(isStar)){
+			while(currentChar != SourceFile.eof && !checkForCommentEnd(isStar)){
 				// check to make sure that it is not end of comment
 				accept();
 			}
@@ -257,6 +259,9 @@ public final class Scanner {
 			if (currentChar == '*' && nextChar == '/') {
 				endCommentFound = true;
 				acceptMultiple(2);
+			}else if(currentChar == SourceFile.eof || nextChar == SourceFile.eof){
+				System.out.println("UNTERMINATED COMMENT");
+				
 			}
 		}else{
 			if(currentChar == '\n' || currentChar == '\r'){
