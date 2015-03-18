@@ -144,6 +144,10 @@ public final class Scanner {
 			addCharToString();
 			accept();
 			return Token.ERROR;
+		case '"':
+			accept();
+			checkString();
+			return Token.STRINGLITERAL;
 		default:
 			int token = checkForLiteral();
 //			accept();
@@ -449,5 +453,57 @@ public final class Scanner {
 			addCharToString();
 			accept();
 		}
+	}
+	
+	void checkString(){
+		// we've seen and accepted the first quotatinon marks
+		//while " is not encountered
+		StringBuffer buffer = new StringBuffer();
+		String errorString = "";
+		int charDelta = 0;
+		boolean error = false;
+		char c = ' ';
+		while(c != SourceFile.eof && c != '"' && !error){
+			c = charDelta == 0 ? currentChar : sourceFile.inspectChar(charDelta);
+			buffer.append(c);
+			if(c == '\n' || c == SourceFile.eof){
+				errorString = "ERROR: untermintated string";
+				error = true;
+			}
+			if(c == '\\'){
+				char nextChar = sourceFile.inspectChar(charDelta+1);
+				boolean isValid = checkEscapeChar(nextChar);
+				if(!isValid){
+					errorString = "ERROR: illegal escape char";
+					error = true;
+				}
+				charDelta++;
+			}
+			charDelta++;
+		}
+		appendToStrBuffer(charDelta-1);
+		// get rid of the trailing quotes
+		System.out.println(errorString);
+		accept();
+		
+	}
+	
+	boolean checkEscapeChar(char c){
+		boolean isEscape = false;
+		switch(c){
+		case 'b':
+		case 'f':
+		case 'n':
+		case 'r':
+		case 't':
+		case '\'':
+		case '"':
+		case '\\':
+			isEscape = true;
+			break;
+		default:
+				break;
+		}
+		return isEscape;
 	}
 }
