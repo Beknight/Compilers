@@ -15,6 +15,7 @@ public final class Scanner {
 
 	private SourceFile sourceFile;
 	private boolean debug;
+	private static final int TAB_SPACE = 8;
 	private static char[] TRUE_ARRAY  = {'t','r','u','e'};
 	private static char[] FALSE_ARRAY = {'f','a','l','s','e'};
 	private ErrorReporter errorReporter;
@@ -239,6 +240,10 @@ public final class Scanner {
 				skippableFound = true;
 				accept();
 				break;
+			case '\t':
+				skippableFound = true;
+				// csomplete me
+				accept();
 			default:
 				skippableFound = false;
 				break;
@@ -524,6 +529,7 @@ public final class Scanner {
 				addCharToString();
 				specialAccept();
 				specialAccept();
+				i = i + 1;
 			
 			}else{
 				addCharToString();
@@ -664,7 +670,9 @@ public final class Scanner {
 		public int getLineCount(){ return lineCount; }
 		public int getColumnCount() { return columnCount; }
 		
+	}
+	
+	private void checkSpacesToSkip(){
 		
 	}
-
 }
