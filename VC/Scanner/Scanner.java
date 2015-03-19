@@ -36,6 +36,8 @@ public final class Scanner {
 		currentChar = sourceFile.getNextChar();
 		debug = false;
 		counter = new TextCount();
+		lineCount = 1;
+		columnCount = 1;
 	}
 
 	public void enableDebugging() {
@@ -44,6 +46,7 @@ public final class Scanner {
 
 	// accept gets the next character from the source program.
 
+	
 	private void accept() {
 		if(currentChar == '\r' || currentChar == '\n'){
 			counter.incrementLineCounter();
@@ -57,6 +60,11 @@ public final class Scanner {
 		// you may also increment your line and column counters here
 	}
 
+	private void specialAccept(){
+		counter.incrementColumnCounter();
+		currentChar = sourceFile.getNextChar();
+	}
+	
 	// inspectChar returns the n-th character after currentChar
 	// in the input stream.
 	//
@@ -80,6 +88,7 @@ public final class Scanner {
 			accept();
 			return Token.LPAREN;
 		case '|':
+			addCharToString();
 			accept();
 			if (currentChar == '|') {
 				addCharToString();
@@ -88,10 +97,27 @@ public final class Scanner {
 			} else {
 				return Token.ERROR;
 			}
+		case '[':
+			addCharToString();
+			accept();
+			return Token.LBRACKET;
+		case ']':
+			addCharToString();
+			accept();
+			return Token.RBRACKET;
+			
 		case ')':
 			addCharToString();
 			accept();
 			return Token.RPAREN;
+		case '}':
+			addCharToString();
+			accept();
+			return Token.RCURLY;
+		case '{':
+			addCharToString();
+			accept();
+			return Token.LCURLY;
 		case '*':
 			addCharToString();
 			accept();
@@ -100,6 +126,15 @@ public final class Scanner {
 			addCharToString();
 			accept();
 			return Token.PLUS;
+		case '&':
+			addCharToString();
+			accept();
+			if(currentChar == '&'){
+				addCharToString();
+				accept();
+				return Token.ANDAND;
+			}
+			return Token.ERROR;
 		case '-':
 			addCharToString();
 			accept();
@@ -125,6 +160,8 @@ public final class Scanner {
 			addCharToString();
 			accept();
 			if(currentChar == '='){
+				addCharToString();
+				accept();
 				return Token.LTEQ;
 			}
 			return Token.LT;
@@ -132,6 +169,8 @@ public final class Scanner {
 			addCharToString();
 			accept();
 			if(currentChar == '='){
+				addCharToString();
+				accept();
 				return Token.GTEQ;
 			}
 			return Token.GT;
@@ -139,15 +178,15 @@ public final class Scanner {
 			addCharToString();
 			accept();
 			if(currentChar == '='){
+				addCharToString();
+				accept();
 				return Token.EQEQ;	
 			}
 			return Token.EQ;
-		case '.':
-			addCharToString();
-			accept();
-			return Token.ERROR;
 		case '"':
 			accept();
+			//this should be the start of the token ? 
+//			sourcePos.charStart = counter.columnCount;
 			checkString();
 			return Token.STRINGLITERAL;
 		case '!':
@@ -309,7 +348,7 @@ public final class Scanner {
 				if(curWordState == WordState.noChar || curWordState == WordState.variable){
 					// letters can only be part of word
 					curWordState = WordState.variable;
-				}else if((c == 'e' || c == 'E') && curWordState == WordState.floatState){
+				}else if((c == 'e' || c == 'E') && (curWordState == WordState.floatState || curWordState == WordState.integerState || curWordState == WordState.dotState) ){
 					curWordState = WordState.eState;
 				}else {
 					curWordState = WordState.error;
@@ -327,7 +366,7 @@ public final class Scanner {
 				}
 
 			}else if(c == '.'){
-				if(curWordState == WordState.integerState){
+				if(curWordState == WordState.integerState || curWordState == WordState.noChar){
 					curWordState = WordState.dotState;
 				}else { 
 					curWordState = WordState.error;
@@ -370,7 +409,7 @@ public final class Scanner {
 					token = Token.ID;
 				}
 
-			}else if(listState == WordState.floatState ){
+			}else if(listState == WordState.floatState || listState == WordState.dotState){
 				goodToken = checkFloat(array);
 				token = Token.FLOATLITERAL;
 
@@ -477,6 +516,23 @@ public final class Scanner {
 		}
 	}
 
+	void appendToStrBufferWithCheck(int x){
+		for(int i = 0; i < x; i++){
+			char nextChar = inspectChar(1);
+			if(currentChar == '\\' && checkEscapeChar(nextChar)){
+				currentChar = getEscape(nextChar);
+				addCharToString();
+				specialAccept();
+				specialAccept();
+			
+			}else{
+				addCharToString();
+				accept();
+			}
+		}
+	}
+	
+	
 	void checkString(){
 		// we've seen and accepted the first quotatinon marks
 		//while " is not encountered
@@ -489,26 +545,31 @@ public final class Scanner {
 			c = charDelta == 0 ? currentChar : sourceFile.inspectChar(charDelta);
 			buffer.append(c);
 			if(c == '\n' || c == SourceFile.eof){
-				errorString = "ERROR: untermintated string";
+				errorString = "ERROR: untermintated string\n";
 				error = true;
+//				charDelta;
 			}
 			if(c == '\\'){
 				char nextChar = sourceFile.inspectChar(charDelta+1);
 				boolean isValid = checkEscapeChar(nextChar);
 				if(!isValid){
-					errorString = "ERROR: illegal escape char";
+					errorString = "ERROR: illegal escape char\n";
 //					error = true;
 				}
-				charDelta++;
+//				charDelta++;
 			}
 			charDelta++;
 		}
-		appendToStrBuffer(charDelta-1);
+		appendToStrBufferWithCheck(charDelta-1);
 		// get rid of the trailing quotes
-		System.out.println(errorString);
-		accept();
+		System.out.print(errorString);
+		if(currentChar == '"'){
+			accept();
+		}
 
 	}
+	
+	
 
 	boolean isLegal(){
 		boolean isLegal = false;
@@ -537,4 +598,73 @@ public final class Scanner {
 		}
 		return isEscape;
 	}
+	char getEscape(char c){
+		char escapeChar = ' ';
+	
+		switch(c){
+		case 'b':
+			escapeChar = '\b';
+			break;
+		case 'f':
+			escapeChar = '\f';
+			break;
+		case 'n':
+			escapeChar = '\n';
+			break;
+		case 'r':
+			escapeChar = '\r';
+			break;
+		case 't':
+			escapeChar = '\t';
+			break;
+		case '\'':
+			escapeChar = '\'';
+			break;
+		case '"':
+			escapeChar = '\"';
+			break;
+		case '\\':
+			escapeChar = '\\';
+			break;
+		}
+		return escapeChar;
+	}
+	//helper class for linecCounting
+	private class TextCount {
+
+
+		private int lineCount;
+		private int columnCount;
+
+		public TextCount(){
+			lineCount = 1;
+			columnCount = 1;
+		}
+		//setters
+		public void incrementLineCounter(){
+			lineCount++;
+		}
+		
+		public void incrementColumnCounter(){
+			columnCount++;
+		}
+		
+		public void incrementLineCounterByN(int n){
+			lineCount += n;
+		}
+		
+		public void incrementColumnCounterByN(int n){
+			columnCount += n;
+		}
+		
+		public void resetColumn(){
+			columnCount = 1;
+		}
+		
+		public int getLineCount(){ return lineCount; }
+		public int getColumnCount() { return columnCount; }
+		
+		
+	}
+
 }
