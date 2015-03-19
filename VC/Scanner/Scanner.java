@@ -150,8 +150,25 @@ public final class Scanner {
 			accept();
 			checkString();
 			return Token.STRINGLITERAL;
+		case '!':
+			addCharToString();
+			accept();
+			if(currentChar == '='){
+				addCharToString();
+				accept();
+				return Token.NOTEQ;
+			}
+			return Token.NOT;
 		default:
-			int token = checkForLiteral();
+			int token = -1;
+			if(isLegal()){
+				token = checkForLiteral();
+			}else{
+//				 must be illegal? 
+				addCharToString();
+				accept();
+				token = Token.ERROR;
+			}
 			//			accept();
 			return token;
 		}
@@ -260,7 +277,7 @@ public final class Scanner {
 				endCommentFound = true;
 				acceptMultiple(2);
 			}else if(currentChar == SourceFile.eof || nextChar == SourceFile.eof){
-				System.out.println("UNTERMINATED COMMENT");
+				System.out.println("ERROR: UNTERMINATED COMMENT");
 
 			}
 		}else{
@@ -284,9 +301,8 @@ public final class Scanner {
 		LinkedList<WordState> stateList = new LinkedList<WordState>();
 		int charDelta = 0;
 		StringBuffer strBuff = new StringBuffer();
-		boolean foundIllegal = false;
 		char c = ' ';
-		while(curWordState != WordState.error && curWordState != WordState.illegal){
+		while(curWordState != WordState.error ){
 			// from cur char onwards
 			c = charDelta > 0 ?  sourceFile.inspectChar(charDelta) : currentChar;
 			if(checkIsAlpha(c)){
@@ -329,17 +345,12 @@ public final class Scanner {
 			charDelta++;
 			stateList.addFirst(curWordState);
 		}
-		//		if(stateList.getFirst() == WordState.illegal){
-		//			token = Token.ERROR;
-		//			currentSpelling.append(strBuff.toString().toCharArray()[0]);
-		//			accept();
-		//		}else{
+
 		boolean goodToken = false;
 		//convert the strBuff to char arry
 		//after error we  know that the last character was wrong . accept up to that point and return. 
 		strBuff.deleteCharAt(strBuff.length() - 1);
 		stateList.pop();
-		assert(strBuff.length() < 0);
 
 		while(!goodToken && strBuff.length() > 0){
 			// while there is not an accepted token || char is not empy
@@ -377,7 +388,6 @@ public final class Scanner {
 		// we need to accept and append strBuffer length chars
 		appendToStrBuffer(strBuff.length());
 		
-		//		}
 		return token;
 	}
 	boolean checkId(char[] array){
@@ -487,7 +497,7 @@ public final class Scanner {
 				boolean isValid = checkEscapeChar(nextChar);
 				if(!isValid){
 					errorString = "ERROR: illegal escape char";
-					error = true;
+//					error = true;
 				}
 				charDelta++;
 			}
@@ -500,6 +510,15 @@ public final class Scanner {
 
 	}
 
+	boolean isLegal(){
+		boolean isLegal = false;
+		char c = currentChar;
+		if(checkIsDig(c) || c == ' ' || checkIsAlpha(c) || c == '.' || c == '+' || c == '-'){
+			isLegal = true;
+		}
+		return isLegal;
+	}
+	
 	boolean checkEscapeChar(char c){
 		boolean isEscape = false;
 		switch(c){
