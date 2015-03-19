@@ -26,7 +26,7 @@ public final class Scanner {
 	private int columnCount;
 	private Map<WordState, Integer> stateMap =  new HashMap<WordState, Integer>();
 	public enum WordState {
-		noChar, integerState, floatState, exponentState, keyword, variable, error, dotState, eState , end, opState
+		noChar, integerState, floatState, exponentState, keyword, variable, error, dotState, eState , end, opState, illegal
 	}
 	// =========================================================
 
@@ -111,7 +111,7 @@ public final class Scanner {
 		case SourceFile.eof:
 			currentSpelling.append(Token.spell(Token.EOF));
 			accept();
-//			counter.incrementColumnCounter();
+			//			counter.incrementColumnCounter();
 			return Token.EOF;
 		case ',':
 			addCharToString();
@@ -152,7 +152,7 @@ public final class Scanner {
 			return Token.STRINGLITERAL;
 		default:
 			int token = checkForLiteral();
-//			accept();
+			//			accept();
 			return token;
 		}
 	}
@@ -160,7 +160,7 @@ public final class Scanner {
 	private void addCharToString(){
 		currentSpelling.append(currentChar);
 	}
-	
+
 	void skipSpaceAndComments() {
 		// needs to find the start of the next token
 		boolean skippableFound = true;
@@ -170,7 +170,7 @@ public final class Scanner {
 				// check for space
 				skippableFound = ignoreWhiteSpaces();
 				break;
-			// check for slash
+				// check for slash
 			case '/':
 				// inspect the next char
 				skippableFound = checkForCommentChars();
@@ -185,11 +185,11 @@ public final class Scanner {
 				break;
 			default:
 				skippableFound = false;
-					break;
+				break;
 			}
 		}
 	}
-
+	//========================++TOKEN==============================================================
 	public Token getToken() {
 		Token tok;
 		int kind;
@@ -221,7 +221,7 @@ public final class Scanner {
 		boolean commentFound = false;
 		boolean isStar = false;
 		boolean endOfComment = false;
-		
+
 		if (sourceFile.inspectChar(1) == '/') {
 			commentFound = true;
 		} else if (sourceFile.inspectChar(1) == '*') {
@@ -261,7 +261,7 @@ public final class Scanner {
 				acceptMultiple(2);
 			}else if(currentChar == SourceFile.eof || nextChar == SourceFile.eof){
 				System.out.println("UNTERMINATED COMMENT");
-				
+
 			}
 		}else{
 			if(currentChar == '\n' || currentChar == '\r'){
@@ -284,8 +284,9 @@ public final class Scanner {
 		LinkedList<WordState> stateList = new LinkedList<WordState>();
 		int charDelta = 0;
 		StringBuffer strBuff = new StringBuffer();
+		boolean foundIllegal = false;
 		char c = ' ';
-		while(curWordState != WordState.error){
+		while(curWordState != WordState.error && curWordState != WordState.illegal){
 			// from cur char onwards
 			c = charDelta > 0 ?  sourceFile.inspectChar(charDelta) : currentChar;
 			if(checkIsAlpha(c)){
@@ -308,7 +309,7 @@ public final class Scanner {
 				}else{
 					curWordState = WordState.error;
 				}
-				
+
 			}else if(c == '.'){
 				if(curWordState == WordState.integerState){
 					curWordState = WordState.dotState;
@@ -328,15 +329,20 @@ public final class Scanner {
 			charDelta++;
 			stateList.addFirst(curWordState);
 		}
+		//		if(stateList.getFirst() == WordState.illegal){
+		//			token = Token.ERROR;
+		//			currentSpelling.append(strBuff.toString().toCharArray()[0]);
+		//			accept();
+		//		}else{
 		boolean goodToken = false;
 		//convert the strBuff to char arry
 		//after error we  know that the last character was wrong . accept up to that point and return. 
 		strBuff.deleteCharAt(strBuff.length() - 1);
 		stateList.pop();
 		assert(strBuff.length() < 0);
-		
+
 		while(!goodToken && strBuff.length() > 0){
-		// while there is not an accepted token || char is not empy
+			// while there is not an accepted token || char is not empy
 			WordState listState = stateList.getFirst();
 			// check the char[] against what token is on the statelist
 			//convert the string into a char arary
@@ -348,15 +354,15 @@ public final class Scanner {
 					token = Token.BOOLEANLITERAL;
 				}
 				if (!goodToken){
-//				 else check if its id
+					//				 else check if its id
 					goodToken = checkId(array);
 					token = Token.ID;
 				}
-				
+
 			}else if(listState == WordState.floatState ){
 				goodToken = checkFloat(array);
 				token = Token.FLOATLITERAL;
-				
+
 			} else if(listState == WordState.integerState) {
 				goodToken = checkIsInt(array);
 				token = Token.INTLITERAL;
@@ -366,11 +372,12 @@ public final class Scanner {
 				strBuff.deleteCharAt(strBuff.length() - 1);
 				stateList.pop();
 			}
-		// accept char[].length e and add char.length to string buffer 
+			// accept char[].length e and add char.length to string buffer 
 		}
 		// we need to accept and append strBuffer length chars
 		appendToStrBuffer(strBuff.length());
 		
+		//		}
 		return token;
 	}
 	boolean checkId(char[] array){
@@ -409,12 +416,12 @@ public final class Scanner {
 			System.out.println("eCOunt and opCount");
 			isGood = false;
 		}
-		
+
 		if(lastLetter == 'e' || lastLetter == 'E' || lastLetter == '+' || lastLetter == '-'){
 			System.out.println("lastLetter");
 			isGood = false;
 		}
-		
+
 		return isGood;
 	}
 
@@ -427,17 +434,17 @@ public final class Scanner {
 		}
 		return isInt;
 	}
-	
+
 	boolean checkBoolLiteral(char[] array){
 		boolean isBoolLiteral = false;
 		//check if spelling is true  or false
 		if(Arrays.equals(array,TRUE_ARRAY) || Arrays.equals(array, FALSE_ARRAY)){
 			isBoolLiteral = true;
 		}
-		
+
 		return isBoolLiteral;
 	}
-	
+
 	boolean checkIsAlpha(char c){
 		boolean isAlpha = false;
 		if((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')){
@@ -445,7 +452,7 @@ public final class Scanner {
 		}
 		return isAlpha;
 	}
-	
+
 	boolean checkIsDig(char c){
 		boolean isDig = false;
 		if( c >= '0' && c <= '9'){
@@ -459,7 +466,7 @@ public final class Scanner {
 			accept();
 		}
 	}
-	
+
 	void checkString(){
 		// we've seen and accepted the first quotatinon marks
 		//while " is not encountered
@@ -490,9 +497,9 @@ public final class Scanner {
 		// get rid of the trailing quotes
 		System.out.println(errorString);
 		accept();
-		
+
 	}
-	
+
 	boolean checkEscapeChar(char c){
 		boolean isEscape = false;
 		switch(c){
@@ -507,7 +514,7 @@ public final class Scanner {
 			isEscape = true;
 			break;
 		default:
-				break;
+			break;
 		}
 		return isEscape;
 	}
