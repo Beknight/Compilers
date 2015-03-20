@@ -243,6 +243,7 @@ public final class Scanner {
 			case '\t':
 				skippableFound = true;
 				// csomplete me
+				checkSpacesToSkip();
 				accept();
 			default:
 				skippableFound = false;
@@ -364,6 +365,8 @@ public final class Scanner {
 					curWordState = WordState.integerState;
 				}else if(curWordState == WordState.dotState || curWordState == WordState.floatState || curWordState == WordState.eState || curWordState == WordState.opState){
 					curWordState = WordState.floatState;
+				}else if(curWordState == WordState.integerState){
+					curWordState = WordState.integerState;
 				}else if(curWordState == WordState.variable){
 					curWordState = WordState.variable;
 				}else{
@@ -415,8 +418,14 @@ public final class Scanner {
 				}
 
 			}else if(listState == WordState.floatState || listState == WordState.dotState){
-				goodToken = checkFloat(array);
-				token = Token.FLOATLITERAL;
+				if(checkOnlyDot(array)){
+					goodToken = true;
+					token = Token.ERROR;
+				}else{
+					goodToken = checkFloat(array);
+					token = Token.FLOATLITERAL;
+				}
+				
 
 			} else if(listState == WordState.integerState) {
 				goodToken = checkIsInt(array);
@@ -433,6 +442,13 @@ public final class Scanner {
 		appendToStrBuffer(strBuff.length());
 		
 		return token;
+	}
+	boolean checkOnlyDot(char[] array ){
+		boolean isDot = false;
+		if(array.length == 1 && array[0] == '.'){
+			isDot = true;
+		}
+		return isDot;
 	}
 	boolean checkId(char[] array){
 		boolean isId = true;
@@ -467,15 +483,13 @@ public final class Scanner {
 		if(eCount <= 1 && opCount <=1){
 			isGood = true;
 		}else {
-			System.out.println("eCOunt and opCount");
 			isGood = false;
 		}
 
 		if(lastLetter == 'e' || lastLetter == 'E' || lastLetter == '+' || lastLetter == '-'){
-			System.out.println("lastLetter");
 			isGood = false;
 		}
-
+		
 		return isGood;
 	}
 
@@ -546,8 +560,10 @@ public final class Scanner {
 		String errorString = "";
 		int charDelta = 0;
 		boolean error = false;
+		boolean escaped = false;
+		char prevChar = ' ';
 		char c = ' ';
-		while(c != SourceFile.eof && c != '"' && !error){
+		while(c != SourceFile.eof && (c != '"' ) && !error){
 			c = charDelta == 0 ? currentChar : sourceFile.inspectChar(charDelta);
 			buffer.append(c);
 			if(c == '\n' || c == SourceFile.eof){
@@ -558,6 +574,9 @@ public final class Scanner {
 			if(c == '\\'){
 				char nextChar = sourceFile.inspectChar(charDelta+1);
 				boolean isValid = checkEscapeChar(nextChar);
+				if(isValid){
+					charDelta = charDelta + 1;
+				}
 				if(!isValid){
 					errorString = "ERROR: illegal escape char\n";
 //					error = true;
@@ -635,6 +654,24 @@ public final class Scanner {
 		}
 		return escapeChar;
 	}
+	
+	private void checkSpacesToSkip(){
+		//get the current line count
+		int curCol = counter.getColumnCount();
+		// mod with 8? 
+		int diff = 0;
+		int delta = 0;
+		int modulo = -1;
+		// from cur col till modulo 8 = 0;
+		while(modulo != 0){
+			modulo = (curCol + delta) %8;
+			delta++;
+		}
+//		int diff = curCol%8;
+		// result is how many chars we should advance
+		diff = delta == 0 ? 8 : delta;
+		counter.incrementColumnCounterByN(diff-1);
+	}
 	//helper class for linecCounting
 	private class TextCount {
 
@@ -672,7 +709,5 @@ public final class Scanner {
 		
 	}
 	
-	private void checkSpacesToSkip(){
-		
-	}
+	
 }
